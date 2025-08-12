@@ -18,7 +18,6 @@ function EditArea({ note, onUpdate, onCancel }) {
   async function handleSubmit(event) {
     event.preventDefault();
     
-    // Walidacja
     if (!editedNote.title.trim() || !editedNote.content.trim()) {
       alert('Proszę wypełnić zarówno tytuł jak i treść notatki');
       return;

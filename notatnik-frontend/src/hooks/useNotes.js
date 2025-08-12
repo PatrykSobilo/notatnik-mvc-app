@@ -12,7 +12,6 @@ function useNotes(isLoggedIn) {
   
   const abortControllerRef = useRef(null);
 
-  // Załaduj notatki gdy użytkownik się zaloguje
   useEffect(() => {
     if (isLoggedIn && !hasLoadedOnce) {
       reloadNotes();
@@ -20,7 +19,6 @@ function useNotes(isLoggedIn) {
     }
   }, [isLoggedIn, hasLoadedOnce]);
 
-  // Wyczyść dane gdy użytkownik się wyloguje
   useEffect(() => {
     if (!isLoggedIn) {
       setNotes([]);
@@ -48,7 +46,6 @@ function useNotes(isLoggedIn) {
       setDisplayedNotes(notesData);
     } catch (error) {
       if (error.name !== 'AbortError') {
-        console.error('Błąd ładowania notatek:', error);
         setError('Nie udało się załadować notatek');
       }
     } finally {
@@ -62,7 +59,6 @@ function useNotes(isLoggedIn) {
       await NotesAPI.createNote(newNote);
       await reloadNotes();
     } catch (error) {
-      console.error('Błąd dodawania notatki:', error);
       setError('Nie udało się dodać notatki');
       throw error;
     } finally {
@@ -77,7 +73,6 @@ function useNotes(isLoggedIn) {
       setEditingNote(null);
       await reloadNotes();
     } catch (error) {
-      console.error('Błąd aktualizacji notatki:', error);
       setError('Nie udało się zaktualizować notatki');
       throw error;
     } finally {
@@ -91,7 +86,6 @@ function useNotes(isLoggedIn) {
       await NotesAPI.deleteNote(id);
       await reloadNotes();
     } catch (error) {
-      console.error('Błąd usuwania notatki:', error);
       setError('Nie udało się usunąć notatki');
       throw error;
     } finally {
@@ -133,7 +127,6 @@ function useNotes(isLoggedIn) {
       setDisplayedNotes(searchResults);
     } catch (error) {
       if (error.name !== 'AbortError') {
-        console.error('Błąd wyszukiwania:', error);
         setError('Błąd wyszukiwania notatek');
       }
     } finally {

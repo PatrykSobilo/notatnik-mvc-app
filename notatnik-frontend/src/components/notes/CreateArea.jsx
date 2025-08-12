@@ -21,7 +21,6 @@ function CreateArea(props) {
   async function submitNote(event) {
     event.preventDefault();
     
-    // Walidacja
     if (!note.title.trim() || !note.content.trim()) {
       alert('Proszę wypełnić zarówno tytuł jak i treść notatki');
       return;
@@ -34,7 +33,6 @@ function CreateArea(props) {
         content: note.content.trim()
       });
       
-      // Wyczyść formularz po pomyślnym dodaniu
       setNote({
         title: "",
         content: ""

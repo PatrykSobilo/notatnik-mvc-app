@@ -4,7 +4,6 @@ function SearchArea({ onSearch, onClear }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  // Debouncing - opóźnione wyszukiwanie po przestaniu pisania
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -12,7 +11,7 @@ function SearchArea({ onSearch, onClear }) {
       } else {
         onClear();
       }
-    }, 500); // 500ms opóźnienia
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);

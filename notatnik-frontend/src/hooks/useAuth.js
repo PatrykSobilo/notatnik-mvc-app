@@ -6,7 +6,6 @@ function useAuth() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Sprawdź autoryzację przy starcie
   useEffect(() => {
     checkAuth();
   }, []);
@@ -21,7 +20,6 @@ function useAuth() {
         setIsLoggedIn(true);
       }
     } catch (error) {
-      console.error('Błąd weryfikacji autoryzacji:', error);
       localStorage.removeItem('token');
       setIsLoggedIn(false);
       setCurrentUser(null);
@@ -34,9 +32,7 @@ function useAuth() {
     try {
       setCurrentUser(userData.user);
       setIsLoggedIn(true);
-      console.log('Zalogowano pomyślnie:', userData.user);
     } catch (error) {
-      console.error('Błąd logowania:', error);
       throw error;
     }
   };
@@ -45,9 +41,7 @@ function useAuth() {
     try {
       setCurrentUser(userData);
       setIsLoggedIn(true);
-      console.log('Zarejestrowano i zalogowano pomyślnie:', userData);
     } catch (error) {
-      console.error('Błąd rejestracji:', error);
       throw error;
     }
   };
@@ -56,7 +50,6 @@ function useAuth() {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setCurrentUser(null);
-    console.log('Wylogowano pomyślnie');
   };
 
   return {
