@@ -1,10 +1,9 @@
 import NotesModel from '../db/notesModel.js';
 
 class NotesController {
-  // GET /api/notes - Pobierz wszystkie notatki użytkownika
   static async getAllNotes(req, res) {
     try {
-      const userId = req.user?.userId; // Z middleware auth
+      const userId = req.user?.userId;
       
       if (!userId) {
         return res.status(401).json({
@@ -29,7 +28,6 @@ class NotesController {
     }
   }
 
-  // GET /api/notes/:id - Pobierz notatkę po ID (tylko własną)
   static async getNoteById(req, res) {
     try {
       const { id } = req.params;
@@ -72,7 +70,6 @@ class NotesController {
     }
   }
 
-  // POST /api/notes - Utwórz nową notatkę
   static async createNote(req, res) {
     try {
       const { title, content } = req.body;
@@ -85,7 +82,6 @@ class NotesController {
         });
       }
 
-      // Walidacja danych
       if (!title || !content) {
         return res.status(400).json({
           success: false,
@@ -117,7 +113,6 @@ class NotesController {
     }
   }
 
-  // PUT /api/notes/:id - Zaktualizuj notatkę (tylko własną)
   static async updateNote(req, res) {
     try {
       const { id } = req.params;
@@ -131,7 +126,6 @@ class NotesController {
         });
       }
 
-      // Walidacja ID
       if (!id || isNaN(id)) {
         return res.status(400).json({
           success: false,
@@ -139,7 +133,6 @@ class NotesController {
         });
       }
 
-      // Walidacja danych
       if (!title || !content) {
         return res.status(400).json({
           success: false,
@@ -178,7 +171,6 @@ class NotesController {
     }
   }
 
-  // DELETE /api/notes/:id - Usuń notatkę (tylko własną)
   static async deleteNote(req, res) {
     try {
       const { id } = req.params;
@@ -222,7 +214,6 @@ class NotesController {
     }
   }
 
-  // GET /api/notes/search?q=query - Wyszukaj notatki (tylko własne)
   static async searchNotes(req, res) {
     try {
       const { q } = req.query;

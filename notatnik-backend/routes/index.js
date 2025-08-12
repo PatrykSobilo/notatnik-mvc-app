@@ -4,7 +4,6 @@ import authRoutes from './authRoutes.js';
 
 const router = express.Router();
 
-// API Info endpoint
 router.get('/', (req, res) => {
   res.json({
     message: '🗒️ Notatnik API',
@@ -29,10 +28,8 @@ router.get('/', (req, res) => {
   });
 });
 
-// Auth routes
 router.use('/auth', authRoutes);
 
-// Notes routes
 router.use('/notes', notesRoutes);
 
 export default router;

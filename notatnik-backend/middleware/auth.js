@@ -2,10 +2,9 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Middleware do weryfikacji JWT tokenu
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({
@@ -21,12 +20,11 @@ export const authenticateToken = (req, res, next) => {
       });
     }
 
-    req.user = user; // Dodaj dane użytkownika do requesta
+    req.user = user;
     next();
   });
 };
 
-// Opcjonalny middleware - nie wymaga autoryzacji, ale jeśli token jest, to go weryfikuje
 export const optionalAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];

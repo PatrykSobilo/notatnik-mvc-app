@@ -8,15 +8,13 @@ import { initializeDatabase } from './db/init.js';
 import apiRoutes from './routes/index.js';
 import { apiLogger, validateJSON, requestSizeLimit, sanitizeInput } from './middleware/validation.js';
 
-// Ładowanie zmiennych środowiskowych
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(helmet()); // Bezpieczeństwo
-app.use(morgan('combined')); // Logowanie requestów
+app.use(helmet());
+app.use(morgan('combined'));
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -28,12 +26,10 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(validateJSON); // Walidacja JSON
-app.use(requestSizeLimit); // Limit rozmiaru requestów
-app.use(sanitizeInput); // Sanityzacja danych wejściowych
-app.use(apiLogger); // Logowanie API requestów
-
-// Podstawowe endpoint'y
+app.use(validateJSON);
+app.use(requestSizeLimit);
+app.use(sanitizeInput);
+app.use(apiLogger);
 app.get('/', (req, res) => {
   res.json({
     message: '🗒️ Notatnik Backend API',
@@ -43,10 +39,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes
 app.use('/api', apiRoutes);
 
-// Health check endpoint
 app.get('/health', async (req, res) => {
   try {
     const dbStatus = await testConnection();
@@ -64,7 +58,6 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Obsługa błędów 404
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
@@ -73,7 +66,6 @@ app.use('*', (req, res) => {
   });
 });
 
-// Globalny handler błędów
 app.use((error, req, res, next) => {
   console.error('❌ Błąd serwera:', error);
   res.status(500).json({
@@ -83,22 +75,18 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Funkcja startowa serwera
 const startServer = async () => {
   try {
     console.log('🚀 Uruchamianie serwera...');
     
-    // Test połączenia z bazą danych
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.error('❌ Nie można połączyć się z bazą danych');
       process.exit(1);
     }
     
-    // Inicjalizacja bazy danych
     await initializeDatabase();
     
-    // Uruchomienie serwera
     app.listen(PORT, () => {
       console.log(`🌟 Serwer działa na porcie ${PORT}`);
       console.log(`🔗 URL: http://localhost:${PORT}`);
@@ -111,7 +99,6 @@ const startServer = async () => {
   }
 };
 
-// Obsługa zamykania aplikacji
 process.on('SIGINT', () => {
   console.log('\n🛑 Otrzymano sygnał SIGINT, zamykanie serwera...');
   process.exit(0);
@@ -122,5 +109,4 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-// Uruchomienie serwera
 startServer();

@@ -1,6 +1,5 @@
 import pool from './database.js';
 
-// SQL do tworzenia tabeli notatek
 const createNotesTable = `
   CREATE TABLE IF NOT EXISTS notes (
     id SERIAL PRIMARY KEY,
@@ -11,22 +10,18 @@ const createNotesTable = `
   );
 `;
 
-// SQL do tworzenia indeksów dla lepszej wydajności
 const createIndexes = `
   CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at);
   CREATE INDEX IF NOT EXISTS idx_notes_title ON notes(title);
 `;
 
-// Funkcja do inicjalizacji bazy danych
 export const initializeDatabase = async () => {
   try {
     console.log('🚀 Inicjalizacja bazy danych...');
     
-    // Tworzenie tabeli notatek
     await pool.query(createNotesTable);
     console.log('✅ Tabela "notes" została utworzona lub już istnieje');
     
-    // Tworzenie indeksów
     await pool.query(createIndexes);
     console.log('✅ Indeksy zostały utworzone');
     
@@ -38,7 +33,6 @@ export const initializeDatabase = async () => {
   }
 };
 
-// Funkcja do czyszczenia bazy danych (pomocna podczas developmentu)
 export const clearDatabase = async () => {
   try {
     await pool.query('DROP TABLE IF EXISTS notes CASCADE;');

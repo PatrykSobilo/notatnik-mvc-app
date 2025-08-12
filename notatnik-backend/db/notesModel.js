@@ -1,7 +1,6 @@
 import pool from '../db/database.js';
 
 class NotesModel {
-  // Pobierz wszystkie notatki użytkownika
   static async getNotesByUserId(userId) {
     try {
       const result = await pool.query(
@@ -14,7 +13,6 @@ class NotesModel {
     }
   }
 
-  // Pobierz notatkę po ID i user_id (tylko własne notatki)
   static async getNoteByIdAndUserId(id, userId) {
     try {
       const result = await pool.query(
@@ -27,7 +25,6 @@ class NotesModel {
     }
   }
 
-  // Utwórz nową notatkę
   static async createNote(title, content, userId) {
     try {
       const result = await pool.query(
@@ -40,7 +37,6 @@ class NotesModel {
     }
   }
 
-  // Zaktualizuj notatkę (tylko własną)
   static async updateNoteByIdAndUserId(id, title, content, userId) {
     try {
       const result = await pool.query(
@@ -53,7 +49,6 @@ class NotesModel {
     }
   }
 
-  // Usuń notatkę (tylko własną)
   static async deleteNoteByIdAndUserId(id, userId) {
     try {
       const result = await pool.query(
@@ -66,7 +61,6 @@ class NotesModel {
     }
   }
 
-  // Wyszukaj notatki po tytule lub treści (tylko własne)
   static async searchNotesByUserId(query, userId) {
     try {
       const result = await pool.query(

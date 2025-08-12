@@ -3,14 +3,12 @@ import jwt from 'jsonwebtoken';
 import pool from '../db/database.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '7d'; // Token ważny przez 7 dni
+const JWT_EXPIRES_IN = '7d';
 
-// Rejestracja nowego użytkownika
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Walidacja danych wejściowych
     if (!username || !email || !password) {
       return res.status(400).json({
         error: 'Wszystkie pola są wymagane'
@@ -23,7 +21,6 @@ export const register = async (req, res) => {
       });
     }
 
-    // Sprawdź czy użytkownik już istnieje
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE username = $1 OR email = $2',
       [username, email]
@@ -35,11 +32,9 @@ export const register = async (req, res) => {
       });
     }
 
-    // Hash hasła
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Dodaj użytkownika do bazy
     const result = await pool.query(
       'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
       [username, email, hashedPassword]
@@ -47,7 +42,6 @@ export const register = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Utwórz JWT token
     const token = jwt.sign(
       { userId: user.id, username: user.username },
       JWT_SECRET,
@@ -73,19 +67,16 @@ export const register = async (req, res) => {
   }
 };
 
-// Logowanie użytkownika
 export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Walidacja danych wejściowych
     if (!username || !password) {
       return res.status(400).json({
         error: 'Nazwa użytkownika i hasło są wymagane'
       });
     }
 
-    // Znajdź użytkownika w bazie
     const result = await pool.query(
       'SELECT id, username, email, password_hash, created_at FROM users WHERE username = $1',
       [username]
@@ -99,7 +90,6 @@ export const login = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Sprawdź hasło
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {
@@ -108,7 +98,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Utwórz JWT token
     const token = jwt.sign(
       { userId: user.id, username: user.username },
       JWT_SECRET,
@@ -134,12 +123,10 @@ export const login = async (req, res) => {
   }
 };
 
-// Sprawdzenie czy token jest ważny
 export const verifyToken = async (req, res) => {
   try {
-    const { userId } = req.user; // Dodane przez middleware auth
+    const { userId } = req.user;
 
-    // Pobierz dane użytkownika
     const result = await pool.query(
       'SELECT id, username, email, created_at FROM users WHERE id = $1',
       [userId]
@@ -171,7 +158,6 @@ export const verifyToken = async (req, res) => {
   }
 };
 
-// Wylogowanie (po stronie klienta wystarczy usunąć token)
 export const logout = (req, res) => {
   res.json({
     message: 'Wylogowanie pomyślne'
