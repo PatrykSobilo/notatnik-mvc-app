@@ -9,17 +9,16 @@ function AuthContainer({ onLogin, onRegister }) {
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#f5f5f5',
-      padding: '20px 20px 120px', // Dodany większy padding-bottom dla stopki
+      padding: '20px 20px 120px',
       display: 'flex',
-      alignItems: 'flex-start', // Zmiana z 'center' na 'flex-start'
+      alignItems: 'flex-start',
       justifyContent: 'center',
-      paddingTop: '50px' // Mniejszy odstęp od góry (o połowę)
+      paddingTop: '50px'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '900px' // Zwiększona szerokość kontenera
+        maxWidth: '900px'
       }}>
-        {/* Przełącznik trybu */}
         <div style={{
           display: 'flex',
           marginBottom: '30px',
@@ -65,7 +64,6 @@ function AuthContainer({ onLogin, onRegister }) {
           </button>
         </div>
 
-        {/* Formularz */}
         {isLoginMode ? (
           <LoginForm onLogin={onLogin} />
         ) : (

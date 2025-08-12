@@ -6,9 +6,9 @@ import EditArea from '../components/notes/EditArea';
 import SearchArea from '../components/notes/SearchArea';
 import Note from '../components/notes/Note';
 
-function HomePage({ 
-  currentUser, 
-  notes, 
+function HomePage({
+  currentUser,
+  notes,
   displayedNotes,
   isSearching,
   editingNote,
@@ -19,26 +19,23 @@ function HomePage({
   onCancelEdit,
   onSearch,
   onClearSearch,
-  onLogout 
+  onLogout
 }) {
   return (
     <div className="home-page">
-      <Header 
-        userName={currentUser?.username} 
-        onLogout={onLogout} 
+      <Header
+        userName={currentUser?.username}
+        onLogout={onLogout}
       />
-      
+
       <main>
-        {/* Obszar dodawania nowej notatki */}
         <CreateArea onAdd={onAddNote} />
-        
-        {/* Wyszukiwarka */}
-        <SearchArea 
+
+        <SearchArea
           onSearch={onSearch}
           onClear={onClearSearch}
         />
-        
-        {/* Obszar edycji notatki */}
+
         {editingNote && (
           <EditArea
             note={editingNote}
@@ -46,8 +43,7 @@ function HomePage({
             onCancel={onCancelEdit}
           />
         )}
-        
-        {/* Lista notatek */}
+
         <div className="notes-container">
           {isSearching && displayedNotes.length === 0 ? (
             <div className="no-results">
@@ -75,7 +71,7 @@ function HomePage({
           )}
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
