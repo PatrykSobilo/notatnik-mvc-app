@@ -1,0 +1,384 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+html {
+  font-family: "Montserrat", sans-serif;
+}
+body {
+  background: #eee;
+  padding: 0 16px;
+}
+
+header {
+  background-color: #f5ba13;
+  margin: auto -16px;
+  padding: 16px 32px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+  color: #fff;
+  font-family: "McLaren", cursive;
+  font-weight: 200;
+}
+
+footer {
+  position: relative; /* Zmiana z absolute na relative */
+  text-align: center;
+  width: 100%;
+  height: auto; /* Zmiana z 2.5rem na auto */
+  margin-top: 40px; /* Dodany margines górny */
+  padding: 30px 0 50px 0; /* Zwiększony padding, szczególnie na dole */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+footer p {
+  color: #ccc;
+  margin: 0; /* Usunięcie domyślnego marginesu */
+  font-size: 14px;
+}
+
+/* Kontener dla notatek - układanie w kafelki */
+.notes-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.note {
+  background: #fff;
+  border-radius: 7px;
+  box-shadow: 0 2px 5px #ccc;
+  padding: 10px;
+  width: 100%; /* Zmiana z 240px na 100% */
+  margin: 0; /* Usunięcie marginesu */
+  /* float: left; */ /* Usunięcie float */
+}
+.note h1 {
+  font-size: 1.1em;
+  margin-bottom: 6px;
+}
+.note p {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.note button {
+  position: relative;
+  float: right;
+  margin-right: 10px;
+  color: #f5ba13;
+  border: none;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  outline: none;
+}
+
+form {
+  position: relative;
+  width: 480px;
+  margin: 30px auto 20px auto;
+  background: #fff;
+  padding: 15px;
+  border-radius: 7px;
+  box-shadow: 0 1px 5px rgb(138, 137, 137);
+}
+form input,
+form textarea {
+  width: 100%;
+  border: none;
+  padding: 4px;
+  outline: none;
+  font-size: 1.2em;
+  font-family: inherit;
+  resize: none;
+}
+form button {
+  position: absolute;
+  right: 18px;
+  bottom: -18px;
+  background: #f5ba13;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  outline: none;
+}
+
+/* Dodatkowe style dla loading i error states */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  margin: 10px auto;
+  max-width: 480px;
+  border-radius: 5px;
+  text-align: center;
+  border: 1px solid #ef5350;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 1.1em;
+}
+
+.retry-button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #c62828;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.retry-button:hover {
+  background-color: #b71c1c;
+}
+
+/* Style dla wyszukiwania */
+.search-area {
+  position: relative;
+  width: 480px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 15px;
+  border-radius: 7px;
+  box-shadow: 0 1px 5px rgb(138, 137, 137);
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  padding: 8px 40px 8px 8px;
+  outline: none;
+  font-size: 1.1em;
+  font-family: inherit;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.search-input:focus {
+  background-color: #fff;
+  box-shadow: 0 0 5px rgba(245, 186, 19, 0.5);
+}
+
+.search-buttons {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #999;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-btn:hover {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.search-loader {
+  animation: pulse 1s infinite;
+}
+
+.search-info {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #666;
+  font-style: italic;
+}
+
+/* Style dla edycji */
+.edit-area {
+  position: relative;
+  width: 480px;
+  margin: 30px auto 20px auto;
+  background: #fff3cd;
+  padding: 15px;
+  border-radius: 7px;
+  box-shadow: 0 1px 5px rgb(138, 137, 137);
+  border: 2px solid #f5ba13;
+}
+
+.edit-area form {
+  width: 100%;
+}
+
+.edit-area form input,
+.edit-area form textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin-bottom: 10px;
+  outline: none;
+  font-size: 1.1em;
+  font-family: inherit;
+  resize: none;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.edit-area form input:focus,
+.edit-area form textarea:focus {
+  border-color: #f5ba13;
+  box-shadow: 0 0 5px rgba(245, 186, 19, 0.3);
+}
+
+.edit-buttons {
+  display: flex !important;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 15px;
+  width: 100%;
+}
+
+/* WAŻNE: Nadpisanie domyślnych stylów form button dla edycji */
+.edit-area .edit-buttons button,
+.edit-area .save-btn,
+.edit-area .cancel-btn {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  border-radius: 5px !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 10px 20px !important;
+  font-size: 1em !important;
+  display: inline-block !important;
+}
+
+.save-btn {
+  background: #28a745 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-weight: bold;
+}
+
+.save-btn:hover {
+  background: #218838 !important;
+}
+
+.save-btn:disabled {
+  background: #6c757d !important;
+  cursor: not-allowed !important;
+}
+
+.cancel-btn {
+  background: #6c757d !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.cancel-btn:hover {
+  background: #5a6268 !important;
+}
+
+/* Style dla przycisków w notatkach */
+.note-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: rgba(245, 186, 19, 0.2);
+}
+
+.delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+/* Animacja dla notatek */
+.note {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Disabled state dla formularza */
+form input:disabled,
+form textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #ccc !important;
+}
