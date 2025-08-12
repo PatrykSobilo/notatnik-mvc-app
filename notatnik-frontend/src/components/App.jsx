@@ -1,96 +1,71 @@
-import React from "react";
-import useAuth from "../hooks/useAuth";
-import useNotes from "../hooks/useNotes";
-import HomePage from "../pages/HomePage";
+import React, { useEffect } from "react";
+import useAuthSimple from "../hooks/useAuthSimple";
+import useNotesSimple from "../hooks/useNotesSimple";
+import Header from "./common/Header";
+import CreateArea from "./notes/CreateArea";
+import Note from "./notes/Note";
 import LoginPage from "../pages/LoginPage";
 
 function App() {
-  const {
-    isLoggedIn,
-    currentUser,
-    authLoading,
-    handleLogin,
-    handleRegister,
-    handleLogout
-  } = useAuth();
+  const auth = useAuthSimple();
+  const notesHook = useNotesSimple();
 
-  const {
-    notes,
-    displayedNotes,
-    loading,
-    error,
-    editingNote,
-    isSearching,
-    addNote,
-    updateNote,
-    deleteNote,
-    editNote,
-    cancelEdit,
-    searchNotes,
-    clearSearch
-  } = useNotes(isLoggedIn);
+  useEffect(() => {
+    auth.checkAuth();
+  }, []);
 
-  if (authLoading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
-          <div>Ładowanie aplikacji...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        fontSize: '18px',
-        color: '#d32f2f',
-        textAlign: 'center'
-      }}>
-        <div>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>❌</div>
-          <div>Wystąpił błąd: {error}</div>
-        </div>
-      </div>
-    );
+  if (!auth.isLoggedIn) {
+    return <LoginPage onLogin={auth.login} />;
   }
 
   return (
-    <div className="app">
-      {!isLoggedIn ? (
-        <LoginPage 
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-        />
-      ) : (
-        <HomePage
-          currentUser={currentUser}
-          notes={notes}
-          displayedNotes={displayedNotes}
-          isSearching={isSearching}
-          editingNote={editingNote}
-          onAddNote={addNote}
-          onUpdateNote={updateNote}
-          onDeleteNote={deleteNote}
-          onEditNote={editNote}
-          onCancelEdit={cancelEdit}
-          onSearch={searchNotes}
-          onClearSearch={clearSearch}
-          onLogout={handleLogout}
-        />
-      )}
+    <div>
+      <Header 
+        userName={auth.currentUser?.name || auth.currentUser?.username} 
+        onLogout={auth.logout} 
+      />
+      
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <button 
+          onClick={notesHook.loadNotes}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#f5ba13',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            marginBottom: '20px'
+          }}
+        >
+          {notesHook.loading ? 'Ładowanie...' : 'Załaduj notatki'}
+        </button>
+        
+        {notesHook.error && (
+          <div style={{ color: 'red', marginBottom: '20px' }}>
+            {notesHook.error}
+          </div>
+        )}
+        
+        <div>
+          <strong>Liczba notatek: {notesHook.notes.length}</strong>
+        </div>
+      </div>
+
+      <CreateArea onAdd={notesHook.addNote} />
+      
+      <div className="notes-container">
+        {notesHook.notes.map((note) => (
+          <Note
+            key={note.id}
+            id={note.id}
+            title={note.title}
+            content={note.content}
+            onDelete={notesHook.deleteNote}
+            onUpdate={notesHook.updateNote}
+          />
+        ))}
+      </div>
     </div>
   );
 }

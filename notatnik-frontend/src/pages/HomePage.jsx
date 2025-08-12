@@ -45,20 +45,20 @@ function HomePage({
         )}
 
         <div className="notes-container">
-          {isSearching && displayedNotes.length === 0 ? (
+          {isSearching && (!displayedNotes || displayedNotes.length === 0) ? (
             <div className="no-results">
               <p style={{ textAlign: 'center', color: '#666', marginTop: '50px' }}>
                 🔍 Nie znaleziono notatek pasujących do wyszukiwanego terminu
               </p>
             </div>
-          ) : displayedNotes.length === 0 ? (
+          ) : (!displayedNotes || displayedNotes.length === 0) ? (
             <div className="no-notes">
               <p style={{ textAlign: 'center', color: '#666', marginTop: '50px' }}>
                 📝 Nie masz jeszcze żadnych notatek. Dodaj pierwszą!
               </p>
             </div>
           ) : (
-            displayedNotes.map((noteItem) => (
+            (displayedNotes || []).map((noteItem) => (
               <Note
                 key={noteItem.id}
                 id={noteItem.id}
