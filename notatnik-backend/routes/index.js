@@ -1,6 +1,7 @@
 import express from 'express';
 import notesRoutes from './notesRoutes.js';
 import authRoutes from './authRoutes.js';
+import aiRoutes from './aiRoutes.js';
 
 const router = express.Router();
 
@@ -22,6 +23,11 @@ router.get('/', (req, res) => {
         'PUT /api/notes/:id': 'Zaktualizuj notatkę',
         'DELETE /api/notes/:id': 'Usuń notatkę',
         'GET /api/notes/search?q=query': 'Wyszukaj notatki'
+      },
+      ai: {
+        'GET /api/ai/status': 'Sprawdź status AI Coach',
+        'GET /api/ai/test': 'Test połączenia z AI',
+        'POST /api/ai/chat': 'Wyślij wiadomość do AI Coach'
       }
     },
     timestamp: new Date().toISOString()
@@ -31,5 +37,7 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 
 router.use('/notes', notesRoutes);
+
+router.use('/ai', aiRoutes);
 
 export default router;
