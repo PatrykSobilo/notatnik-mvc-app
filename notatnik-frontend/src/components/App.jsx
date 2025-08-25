@@ -5,6 +5,7 @@ import Header from "./common/Header";
 import CreateArea from "./notes/CreateArea";
 import Note from "./notes/Note";
 import LoginPage from "../pages/LoginPage";
+import AITestComponent from "./AITestComponent";
 
 function App() {
   const auth = useAuthSimple();
@@ -51,6 +52,8 @@ function App() {
           <strong>Liczba notatek: {notesHook.notes.length}</strong>
         </div>
       </div>
+
+      <AITestComponent />
 
       <CreateArea onAdd={notesHook.addNote} />
       
