@@ -1,19 +1,37 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useAuthSimple from "../hooks/useAuthSimple";
 import useNotesSimple from "../hooks/useNotesSimple";
 import Header from "./common/Header";
 import CreateArea from "./notes/CreateArea";
 import Note from "./notes/Note";
 import LoginPage from "../pages/LoginPage";
-import AITestComponent from "./AITestComponent";
+import ChatModal from "./ChatModal";
 
 function App() {
   const auth = useAuthSimple();
   const notesHook = useNotesSimple();
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
 
   useEffect(() => {
     auth.checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (auth.isLoggedIn) {
+      notesHook.loadNotes();
+    }
+  }, [auth.isLoggedIn]);
+
+  const handleCoachChat = (note) => {
+    setSelectedNote(note);
+    setChatModalOpen(true);
+  };
+
+  const closeChatModal = () => {
+    setChatModalOpen(false);
+    setSelectedNote(null);
+  };
 
   if (!auth.isLoggedIn) {
     return <LoginPage onLogin={auth.login} />;
@@ -25,37 +43,36 @@ function App() {
         userName={auth.currentUser?.name || auth.currentUser?.username} 
         onLogout={auth.logout} 
       />
-      
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <button 
-          onClick={notesHook.loadNotes}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            backgroundColor: '#f5ba13',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            marginBottom: '20px'
-          }}
-        >
-          {notesHook.loading ? 'Ładowanie...' : 'Załaduj notatki'}
-        </button>
-        
-        {notesHook.error && (
-          <div style={{ color: 'red', marginBottom: '20px' }}>
-            {notesHook.error}
-          </div>
-        )}
-        
-        <div>
-          <strong>Liczba notatek: {notesHook.notes.length}</strong>
-        </div>
-      </div>
-
-      <AITestComponent />
 
       <CreateArea onAdd={notesHook.addNote} />
+      
+      {notesHook.error && (
+        <div style={{ 
+          color: 'red', 
+          textAlign: 'center', 
+          margin: '10px',
+          padding: '10px',
+          backgroundColor: '#ffe6e6',
+          border: '1px solid #ffcccc',
+          borderRadius: '5px'
+        }}>
+          {notesHook.error}
+          <button 
+            onClick={notesHook.loadNotes}
+            style={{
+              marginLeft: '10px',
+              padding: '5px 10px',
+              backgroundColor: '#ff4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer'
+            }}
+          >
+            Spróbuj ponownie
+          </button>
+        </div>
+      )}
       
       <div className="notes-container">
         {notesHook.notes.map((note) => (
@@ -66,9 +83,17 @@ function App() {
             content={note.content}
             onDelete={notesHook.deleteNote}
             onUpdate={notesHook.updateNote}
+            onCoachChat={handleCoachChat}
           />
         ))}
       </div>
+
+      {/* Chat Modal */}
+      <ChatModal
+        note={selectedNote}
+        isOpen={chatModalOpen}
+        onClose={closeChatModal}
+      />
     </div>
   );
 }

@@ -47,41 +47,25 @@ class AIAPI {
   }
 
   /**
-   * Test połączenia z AI
+   * Wyślij wiadomość do AI Coach z zapisem w historii
    */
-  static async testConnection() {
-    try {
-      const response = await this.request('/ai/test');
-      return response;
-    } catch (error) {
-      console.error('Błąd testu AI:', error);
-      throw new Error('Nie udało się przetestować połączenia z AI');
-    }
-  }
-
-  /**
-   * Wyślij wiadomość do AI Coach
-   */
-  static async sendMessage(noteTitle, noteContent, message, conversationHistory = []) {
+  static async sendMessagePersistent(noteId, noteTitle, noteContent, message) {
     try {
       const requestData = {
+        noteId,
         noteTitle,
         noteContent,
-        message,
-        conversationHistory
+        message
       };
 
-      const response = await this.request('/ai/chat', {
+      const response = await this.request('/ai/chat/persistent', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(requestData),
       });
 
       return response.data;
     } catch (error) {
-      console.error('Błąd wysyłania wiadomości do AI:', error);
+      console.error('Błąd wysyłania wiadomości do AI (persistent):', error);
       throw new Error(error.message || 'Nie udało się wysłać wiadomości do AI Coach');
     }
   }

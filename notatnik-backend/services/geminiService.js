@@ -89,32 +89,6 @@ Odpowiedz po polsku w maksymalnie 200 słowach.`;
       throw new Error('Wystąpił błąd podczas komunikacji z AI. Spróbuj ponownie.');
     }
   }
-
-  /**
-   * Test połączenia z Gemini API
-   */
-  async testConnection() {
-    if (!this.isAvailable()) {
-      return { success: false, message: 'Gemini AI nie jest skonfigurowany' };
-    }
-
-    try {
-      const result = await this.model.generateContent('Odpowiedz tylko "Test połączenia udany"');
-      const response = await result.response;
-      const text = response.text();
-      
-      return { 
-        success: true, 
-        message: 'Połączenie z Gemini AI działa prawidłowo',
-        response: text 
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        message: `Błąd połączenia: ${error.message}` 
-      };
-    }
-  }
 }
 
 export default new GeminiService();

@@ -14,7 +14,7 @@ export const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      console.error('Błąd weryfikacji tokenu:', err);
+      console.error('❌ [AUTH] Błąd weryfikacji tokenu:', err.message);
       return res.status(403).json({
         error: 'Nieprawidłowy lub wygasły token'
       });

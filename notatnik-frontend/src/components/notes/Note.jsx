@@ -11,25 +11,49 @@ function Note(props) {
     props.onEdit(props.id);
   }
 
+  function handleCoachChat() {
+    if (props.onCoachChat) {
+      props.onCoachChat({
+        id: props.id,
+        title: props.title,
+        content: props.content
+      });
+    }
+  }
+
   return (
     <div className="note">
-      <h1>{props.title}</h1>
-      <p>{props.content}</p>
-      <div className="note-buttons">
+      <div className="note-content">
+        <h1>{props.title}</h1>
+        <p>{props.content}</p>
+      </div>
+      
+      <div className="note-actions">
+        {/* Coach AI Button */}
         <button 
-          onClick={handleEdit}
-          className="edit-btn"
-          title="Edytuj notatkę"
+          onClick={handleCoachChat}
+          className="coach-ai-btn"
+          title="Porozmawiaj z AI Coach o tej notatce"
         >
-          ✏️
+          Coach AI
         </button>
-        <button 
-          onClick={handleDelete}
-          className="delete-btn"
-          title="Usuń notatkę"
-        >
-          🗑️
-        </button>
+        
+        <div className="note-buttons">
+          <button 
+            onClick={handleEdit}
+            className="edit-btn"
+            title="Edytuj notatkę"
+          >
+            ✏️
+          </button>
+          <button 
+            onClick={handleDelete}
+            className="delete-btn"
+            title="Usuń notatkę"
+          >
+            🗑️
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -100,16 +100,6 @@ class NotesAPI {
       throw new Error('Nie udało się wyszukać notatek');
     }
   }
-
-  static async testConnection() {
-    try {
-      const response = await this.request('/');
-      return response;
-    } catch (error) {
-      console.error('Błąd połączenia z API:', error);
-      return false;
-    }
-  }
 }
 
 export default NotesAPI;
