@@ -27,7 +27,12 @@ router.get('/', (req, res) => {
       ai: {
         'GET /api/ai/status': 'Sprawdź status AI Coach',
         'GET /api/ai/test': 'Test połączenia z AI',
-        'POST /api/ai/chat': 'Wyślij wiadomość do AI Coach'
+        'POST /api/ai/chat': 'Wyślij wiadomość do AI Coach (bez historii)',
+        'POST /api/ai/chat/persistent': 'Wyślij wiadomość do AI Coach (z historią)',
+        'GET /api/ai/sessions': 'Pobierz wszystkie sesje czatów użytkownika',
+        'GET /api/ai/sessions/note/:noteId': 'Pobierz sesję czatu dla konkretnej notatki',
+        'GET /api/ai/sessions/:sessionId/messages': 'Pobierz wiadomości z sesji',
+        'DELETE /api/ai/sessions/:sessionId': 'Usuń sesję czatu'
       }
     },
     timestamp: new Date().toISOString()
