@@ -24,3 +24,19 @@ pids
 coverage/
 *.tmp
 *.temp
+# Secrets & API keys
+Gemini API Key.txt
+*.apikey
+*.api-key
+*.secret
+*.secrets
+*.key
+*.pem
+
+# Local environment variants (track example, ignore real)
+# .env.example is intentionally tracked
+
+# Backup / dump files
+*.bak
+*.old
+*.orig
