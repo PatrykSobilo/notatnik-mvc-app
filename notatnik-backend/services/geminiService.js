@@ -255,40 +255,40 @@ Odpowiedz po polsku w maksymalnie 200 słowach.`;
       return text;
 
     } catch (error) {
-      console.error('❌ Błąd komunikacji z Gemini AI:', error);
-
+      const status = error?.status;
       const msg = error?.message || '';
-      // API key invalid
+      console.error('❌ Błąd komunikacji z Gemini AI:', status, msg);
+
+      // Specyficzne komunikaty
       if (msg.includes('API_KEY_INVALID')) {
-        throw new Error('Nieprawidłowy klucz API Gemini. Sprawdź konfigurację.');
+        throw new Error('Nieprawidłowy klucz API Gemini (API_KEY_INVALID).');
       }
-      // Quota
-      if (msg.includes('QUOTA_EXCEEDED')) {
-        throw new Error('Przekroczono limit zapytań do Gemini API.');
+      if (msg.includes('QUOTA') || msg.includes('quota')) {
+        throw new Error('Przekroczono limit (quota) Gemini API. Odczekaj lub zmień plan.');
       }
-      // 404 model not found -> spróbuj runtime fallback raz
-      const notFound = (error.status === 404) || (msg.includes('models/') && msg.includes('not found'));
+
+      const notFound = status === 404 || msg.toLowerCase().includes('not found');
       if (notFound) {
         const triedBefore = this._attemptedRuntimeFallback;
         if (!triedBefore) {
           this._attemptedRuntimeFallback = true;
           const ok = await this._runtimeSelectWorkingModel();
-            if (ok) {
-              // retry once
-              try {
-                const retry = await this.model.generateContent(this.generateCoachPrompt(noteTitle, noteContent, userMessage));
-                const rtext = await retry.response.text();
-                console.log('🔁 Udało się po runtime fallback.');
-                return rtext;
-              } catch (retryErr) {
-                console.error('❌ Retry po fallbacku nieudany:', retryErr.message);
-              }
+          if (ok) {
+            try {
+              const retry = await this.model.generateContent(this.generateCoachPrompt(noteTitle, noteContent, userMessage));
+              const rtext = await retry.response.text();
+              console.log('🔁 Udało się po runtime fallback.');
+              return rtext;
+            } catch (retryErr) {
+              console.error('❌ Retry po fallbacku nieudany:', retryErr.message);
             }
+          }
         }
-        throw new Error('Model Gemini niedostępny / 404. Spróbuj inny GEMINI_MODEL lub zaktualizuj SDK.');
+        const suggestion = `Nie znaleziono modelu '${this.preferredModel}'. Spróbuj ustawić GEMINI_MODEL=gemini-pro lub GEMINI_MODEL=gemini-1.5-pro.`;
+        throw new Error(`Model Gemini niedostępny (404). ${suggestion}`);
       }
 
-      throw new Error('Wystąpił błąd podczas komunikacji z AI. Spróbuj ponownie.');
+      throw new Error(`Wystąpił błąd podczas komunikacji z AI${status ? ` (status ${status})` : ''}. Spróbuj ponownie.`);
     }
   }
 }

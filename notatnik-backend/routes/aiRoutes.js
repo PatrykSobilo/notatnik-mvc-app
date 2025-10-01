@@ -55,6 +55,31 @@ router.get('/models', authenticateToken, async (req, res) => {
 });
 
 /**
+ * Dynamiczna zmiana modelu (diagnostyka / admin)
+ * POST /api/ai/model { model }
+ */
+router.post('/model', authenticateToken, async (req, res) => {
+  try {
+    const { model } = req.body;
+    if (!model) {
+      return res.status(400).json({ success: false, message: 'Brak model w body' });
+    }
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ success: false, message: 'AI niedostępne (brak GEMINI_API_KEY)' });
+    }
+    // Nadpisz preferowany model i zainicjuj ponownie
+    geminiService.preferredModel = model;
+    await geminiService._initModel();
+    if (!geminiService.model) {
+      return res.status(500).json({ success: false, message: 'Nie udało się zainicjować modelu' });
+    }
+    res.json({ success: true, message: 'Model przełączony', data: { active: geminiService.activeModelName } });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Błąd przełączania modelu', error: e.message });
+  }
+});
+
+/**
  * Surowa lista modeli (REST) – omija SDK
  * GET /api/ai/models/raw
  */
