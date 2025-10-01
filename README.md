@@ -188,4 +188,123 @@ Pull Requesty i Issue mile widziane.
 - Zsanityzowano śledzone `.env`
 - Ulepszono `docker-compose.yml` (healthcheck, network, brak twardych haseł)
 
+---
+## 🌐 Produkcyjna domena + HTTPS (sobit.uk)
+
+Konfiguracja produkcyjna używa kontenera `proxy` (Nginx) z własnym obrazem budowanym z katalogu `nginx/`. Certyfikaty Let's Encrypt są przechowywane w *zewnętrznym* volume Dockera: `letsencrypt-data`.
+
+### Kroki jednorazowe (uzyskanie certyfikatu)
+1. Utwórz volume:
+  ```bash
+  docker volume create letsencrypt-data
+  ```
+2. Zatrzymaj proxy jeśli nasłuchuje na porcie 80 (albo jeszcze nie wystartowałeś stacka):
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml stop proxy
+  ```
+3. Uruchom certbot w trybie standalone (zastąpi tymczasowo serwer na :80):
+  ```bash
+  docker run --rm -it -p 80:80 \
+    -v letsencrypt-data:/etc/letsencrypt \
+    certbot/certbot certonly --standalone \
+    -d sobit.uk -d www.sobit.uk \
+    --agree-tos -m <twoj@email> --no-eff-email --rsa-key-size 4096
+  ```
+4. Zweryfikuj pliki:
+  ```bash
+  docker run --rm -v letsencrypt-data:/etc/letsencrypt alpine ls -l /etc/letsencrypt/live/sobit.uk
+  ```
+5. Zbuduj obraz proxy z nowym configiem (plik `nginx/conf.d/sobit.uk.conf` zawiera bloki 80→301 i 443 SSL):
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build proxy
+  ```
+
+Po starcie: `curl -I http://sobit.uk` powinno zwrócić `301 Location: https://sobit.uk/`, a `curl -I https://sobit.uk` nagłówek `Strict-Transport-Security`.
+
+### Struktura certów wewnątrz kontenera
+```
+/etc/letsencrypt/live/sobit.uk/fullchain.pem
+/etc/letsencrypt/live/sobit.uk/privkey.pem
+```
+Montowane read‑only do kontenera `proxy`.
+
+### Zmienne środowiskowe a CORS
+W pliku `.env` ustawiono `FRONTEND_ORIGIN=https://sobit.uk` aby backend akceptował zapytania z domeny produkcyjnej.
+
+### Aktualizacja kodu w produkcji (pull & redeploy)
+```bash
+git pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+---
+## 🔄 Automatyczne odnowienie certyfikatu Let's Encrypt
+
+Certyfikaty ważne 90 dni. Zalecane uruchamianie `certbot renew` raz dziennie. Ponieważ używamy volume `letsencrypt-data`, wystarczy okresowo uruchomić kontener certbota.
+
+### Cron na hoście (prosty wariant)
+Edytuj crontab root:
+```bash
+sudo crontab -e
+```
+Dodaj linię (odpal raz dziennie o 03:15 UTC):
+```cron
+15 3 * * * docker run --rm -v letsencrypt-data:/etc/letsencrypt -p 80:80 certbot/certbot renew --standalone --quiet && docker compose -f /opt/notatnik/app/docker-compose.yml -f /opt/notatnik/app/docker-compose.prod.yml exec -T proxy nginx -s reload
+```
+
+Mechanizm: jeśli którykolwiek cert zbliża się do wygaśnięcia – zostanie odnowiony, a na końcu wykonujemy reload Nginx (bez restartu kontenera).
+
+### Ręczne sprawdzenie czasu ważności
+```bash
+docker run --rm -v letsencrypt-data:/etc/letsencrypt alpine sh -c "openssl x509 -in /etc/letsencrypt/live/sobit.uk/fullchain.pem -noout -enddate"
+```
+
+### Test „dry run” odnowienia
+```bash
+docker run --rm -v letsencrypt-data:/etc/letsencrypt -p 80:80 certbot/certbot renew --dry-run --standalone
+```
+
+---
+## 🤖 Endpointy AI (skrót)
+
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/api/ai/status` | GET | Status dostępności modelu i aktywna nazwa |
+| `/api/ai/models/raw` | GET | Surowa lista modeli z API dostawcy |
+| `/api/ai/models/raw-generate` | POST | Test jednorazowego promptu (diagnostyka) |
+| `/api/ai/chat/persistent` | POST | Wysyła wiadomość i utrzymuje historię czatu (sessionId) |
+| `/api/ai/sessions` | GET | Lista sesji użytkownika |
+| `/api/ai/sessions/:id/messages` | GET | Historia wiadomości danej sesji |
+| `/api/ai/sessions/:id` | DELETE | Usunięcie sesji + wiadomości |
+| `/api/ai/model` | POST | Dynamiczna zmiana modelu (np. `{"model":"gemini-2.5-pro"}`) |
+
+Nagłówek autoryzacji: `Authorization: Bearer <JWT>`.
+
+### Przykład wywołania persistent chat
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"message":"Pomóż streścić notatkę","noteId":123,"noteTitle":"Tytuł","noteContent":"Treść"}' \
+  https://sobit.uk/api/ai/chat/persistent
+```
+
+### Zmiana modelu
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"model":"gemini-2.5-pro"}' https://sobit.uk/api/ai/model
+```
+
+---
+## 🧹 Opcjonalne czyszczenie sesji AI
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" https://sobit.uk/api/ai/sessions
+curl -s -H "Authorization: Bearer $TOKEN" https://sobit.uk/api/ai/sessions/<SESSION_ID>/messages
+curl -X DELETE -H "Authorization: Bearer $TOKEN" https://sobit.uk/api/ai/sessions/<SESSION_ID>
+```
+
+---
+## 📌 TODO (infra / AI)
+- Dodać testy jednostkowe dla warstwy AI fallback
+- (Opcjonalnie) kontener watchdog do monitorowania ważności certów
+- Możliwa migracja do HTTP/3 (quic) w przyszłości
+
 > Jeśli czegoś brakuje – otwórz Issue.
