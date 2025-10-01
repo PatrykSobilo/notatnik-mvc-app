@@ -217,6 +217,8 @@ class GeminiService {
    * Generuje prompt dla roli psychologa/coacha
    */
   generateCoachPrompt(noteTitle, noteContent, userMessage) {
+    const maxWords = parseInt(process.env.GEMINI_COACH_MAX_WORDS || '200', 10);
+    const safeMax = isNaN(maxWords) || maxWords < 50 ? 200 : maxWords; // prosty bezpieczny zakres
     return `Jesteś doświadczonym psychologiem i life coachem. Użytkownik podzielił się z Tobą swoim problemem w notatce:
 
 **Tytuł problemu:** ${noteTitle}
@@ -231,7 +233,7 @@ Jako psycholog i coach:
 4. Zachęć do pozytywnego myślenia
 5. Napisz w sposób ciepły i wspierający
 
-Odpowiedz po polsku w maksymalnie 200 słowach.`;
+Odpowiedz po polsku w maksymalnie ${safeMax} słowach.`;
   }
 
   /**
