@@ -4,6 +4,7 @@ import useNotesSimple from "../hooks/useNotesSimple";
 import Header from "./common/Header";
 import CreateArea from "./notes/CreateArea";
 import Note from "./notes/Note";
+import EditArea from "./notes/EditArea";
 import LoginPage from "../pages/LoginPage";
 import ChatModal from "./ChatModal";
 
@@ -12,6 +13,23 @@ function App() {
   const notesHook = useNotesSimple();
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+
+  // Rozpoczęcie edycji
+  const startEdit = (id) => {
+    setEditingNoteId(id);
+  };
+
+  // Anulowanie edycji
+  const cancelEdit = () => {
+    setEditingNoteId(null);
+  };
+
+  // Zapis edycji
+  const submitEdit = async (id, updated) => {
+    await notesHook.updateNote(id, updated);
+    setEditingNoteId(null); // wyjście z trybu edycji po sukcesie
+  };
 
   useEffect(() => {
     auth.checkAuth();
@@ -81,17 +99,31 @@ function App() {
       )}
       
       <div className="notes-container">
-        {notesHook.notes.map((note) => (
-          <Note
-            key={note.id}
-            id={note.id}
-            title={note.title}
-            content={note.content}
-            onDelete={notesHook.deleteNote}
-            onUpdate={notesHook.updateNote}
-            onCoachChat={handleCoachChat}
-          />
-        ))}
+        {notesHook.notes.map((note) => {
+          const isEditing = editingNoteId === note.id;
+          if (isEditing) {
+            return (
+              <div key={note.id} className="note editing-note-wrapper">
+                <EditArea
+                  note={note}
+                  onUpdate={submitEdit}
+                  onCancel={cancelEdit}
+                />
+              </div>
+            );
+          }
+          return (
+            <Note
+              key={note.id}
+              id={note.id}
+              title={note.title}
+              content={note.content}
+              onDelete={notesHook.deleteNote}
+              onEdit={startEdit}
+              onCoachChat={handleCoachChat}
+            />
+          );
+        })}
       </div>
 
       {/* Chat Modal */}
