@@ -4,13 +4,18 @@ services:
     container_name: notatnik-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: notatnik_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME}
+      POSTGRES_DB: ${DB_NAME:-notatnik_db}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./notatnik-backend
@@ -19,13 +24,23 @@ services:
     env_file:
       - ./.env
     environment:
-      PORT: 3000
-      # DB_* zmienne pobierze z env_file, ale host jawnie dla czytelności
+      PORT: ${PORT:-3000}
       DB_HOST: db
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-notatnik_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-CHANGE_ME}
+      NODE_ENV: production
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build: ./notatnik-frontend
@@ -34,9 +49,19 @@ services:
     depends_on:
       - backend
     environment:
-      VITE_API_BASE: http://localhost:3000
+      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
     ports:
       - "3001:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
+
+networks:
+  default:
+    name: notatnik-net
+    driver: bridge
