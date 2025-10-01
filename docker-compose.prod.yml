@@ -2,16 +2,29 @@ services:
   backend:
     environment:
       NODE_ENV: production
-      # Production origin enforced via FRONTEND_URL
-    ports:
-      - "3000:3000"
-  frontend:
-    environment:
-      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
-    ports:
-      - "3001:80"
-  db:
-    # Do not expose Postgres to the host in prod (commented out mapping)
-    ports: []
+    ports: []  # hidden in prod, only proxy exposes HTTP
 
-# In production you might front this with reverse proxy (nginx/traefik) for HTTPS
+  frontend:
+    ports: []  # served via proxy
+
+  db:
+    ports: []  # never expose Postgres publicly
+
+  proxy:
+    # Build a custom lightweight nginx image that already contains our config,
+    # removing the need for a bind mount (fixes rootless bind issues under /opt).
+    container_name: notatnik-proxy
+    build:
+      context: ./nginx
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]        
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+# To enable HTTPS later add certbot sidecar or switch to Caddy.

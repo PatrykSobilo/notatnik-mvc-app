@@ -1,0 +1,10 @@
+services:
+  db:
+    ports:
+      - "5432:5432" # Optional host access for local dev only
+  backend:
+    ports:
+      - "3000:3000"
+  frontend:
+    ports:
+      - "3001:80"

@@ -1,4 +1,12 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+// Dynamiczne wyznaczanie bazowego URL API w kolejności priorytetu:
+// 1. VITE_API_BASE (jeśli ustawione)
+// 2. VITE_API_BASE_URL (stare nazewnictwo w .env)
+// 3. W środowisku przeglądarki ścieżka względna '/api' (najbezpieczniej za reverse proxy)
+// 4. Fallback dla środowisk bez window (np. testy) -> lokalny backend
+const API_BASE_URL = (
+  (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL)) ||
+  (typeof window !== 'undefined' ? '/api' : 'http://localhost:3000/api')
+);
 
 class AuthAPI {
   

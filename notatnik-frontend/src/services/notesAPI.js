@@ -1,4 +1,8 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+// Dynamiczne wyznaczanie bazowego URL API (spójne z authAPI.js)
+const API_BASE_URL = (
+  (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL)) ||
+  (typeof window !== 'undefined' ? '/api' : 'http://localhost:3000/api')
+);
 
 import AuthAPI from './authAPI.js';
 

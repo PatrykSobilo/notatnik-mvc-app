@@ -7,8 +7,8 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME}
       POSTGRES_DB: ${DB_NAME:-notatnik_db}
-    ports:
-      - "5432:5432"
+    # Intentionally no host port mapping in base file to avoid conflicts with host Postgres
+    # For local dev access from host, use docker-compose.dev.yml override adding 5432:5432
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -34,8 +34,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    # No host port mapping here; production access goes via proxy service (see docker-compose.prod.yml)
+    # For local development with direct access use docker-compose.dev.yml which maps 3000:3000
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 15s
@@ -50,8 +50,8 @@ services:
       - backend
     environment:
       VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
-    ports:
-      - "3001:80"
+    # No direct host port mapping in base file; proxy will serve built static files
+    # For local development (hot reload / direct access) use docker-compose.dev.yml which maps 3001:80
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
       interval: 30s
