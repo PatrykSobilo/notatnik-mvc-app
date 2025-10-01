@@ -34,7 +34,13 @@ function App() {
   };
 
   if (!auth.isLoggedIn) {
-    return <LoginPage onLogin={auth.login} />;
+    // Dodajemy obsługę rejestracji: RegisterForm wcześniej wywoływał onRegister(user)
+    // ale App nie przekazywał tej funkcji, co kończyło się błędem "... is not a function" (zminifikowane 'e is not a function')
+    const handleRegistered = (user) => {
+      // login() oczekuje obiektu zawierającego klucz user
+      auth.login({ user });
+    };
+    return <LoginPage onLogin={auth.login} onRegister={handleRegistered} />;
   }
 
   return (

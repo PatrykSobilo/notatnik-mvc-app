@@ -24,8 +24,10 @@ pids
 coverage/
 *.tmp
 *.temp
-# Secrets & API keys
+
 Gemini API Key.txt
+.env
+notatnik-backend/.env
 *.apikey
 *.api-key
 *.secret
@@ -33,10 +35,6 @@ Gemini API Key.txt
 *.key
 *.pem
 
-# Local environment variants (track example, ignore real)
-# .env.example is intentionally tracked
-
-# Backup / dump files
 *.bak
 *.old
 *.orig

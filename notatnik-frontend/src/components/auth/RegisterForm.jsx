@@ -40,7 +40,11 @@ function RegisterForm({ onRegister }) {
       const { confirmPassword, ...registerData } = formData;
       const result = await AuthAPI.register(registerData);
       console.log('Rejestracja pomyślna:', result);
-      onRegister(result.user);
+      if (typeof onRegister === 'function') {
+        onRegister(result.user);
+      } else {
+        console.warn('onRegister prop is not a function. User will not be auto-logged.');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

@@ -23,6 +23,67 @@ router.get('/status', authenticateToken, (req, res) => {
 });
 
 /**
+ * Lista modeli - diagnostyka (jeśli SDK wspiera listModels)
+ * GET /api/ai/models
+ */
+router.get('/models', authenticateToken, async (req, res) => {
+  try {
+    if (!geminiService.isAvailable()) {
+      return res.status(503).json({ success: false, message: 'AI niedostępne' });
+    }
+    const sdk = geminiService.genAI;
+    let models = null;
+    if (sdk.listModels) {
+      try {
+        const list = await sdk.listModels();
+        models = list?.models?.map(m => ({ name: m.name, methods: m.supportedMethods })) || [];
+      } catch (e) {
+        console.warn('Nie udało się pobrać listy modeli:', e.message);
+      }
+    }
+    res.json({
+      success: true,
+      data: {
+        activeModel: geminiService.activeModelName,
+        candidateModels: geminiService.candidateModels,
+        models
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Błąd pobierania modeli', error: err.message });
+  }
+});
+
+/**
+ * Surowa lista modeli (REST) – omija SDK
+ * GET /api/ai/models/raw
+ */
+router.get('/models/raw', authenticateToken, async (req, res) => {
+  try {
+    const list = await geminiService.rawListModels();
+    res.json({ success: true, data: list });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Błąd raw listModels', error: e.message });
+  }
+});
+
+/**
+ * Surowy test generowania – modelName query lub body
+ * POST /api/ai/models/raw-generate { modelName, prompt }
+ */
+router.post('/models/raw-generate', authenticateToken, async (req, res) => {
+  try {
+    const modelName = req.body.modelName || req.query.modelName;
+    const prompt = req.body.prompt || req.query.prompt || 'ping';
+    if (!modelName) return res.status(400).json({ success: false, message: 'Brak modelName' });
+    const result = await geminiService.rawGenerateTest(modelName, prompt);
+    res.json({ success: true, data: result });
+  } catch (e) {
+    res.status(500).json({ success: false, message: 'Błąd raw generate', error: e.message, status: e.status });
+  }
+});
+
+/**
  * Pobierz sesje czatów użytkownika
  * GET /api/ai/sessions
  */

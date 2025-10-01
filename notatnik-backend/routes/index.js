@@ -26,6 +26,9 @@ router.get('/', (req, res) => {
       },
       ai: {
         'GET /api/ai/status': 'Sprawdź status AI Coach',
+        'GET /api/ai/models': 'Lista dostępnych modeli (diagnostyka)',
+        'GET /api/ai/models/raw': 'Surowa lista modeli (REST, bez SDK)',
+        'POST /api/ai/models/raw-generate': 'Surowy test generateContent przez REST',
         'GET /api/ai/test': 'Test połączenia z AI',
         'POST /api/ai/chat': 'Wyślij wiadomość do AI Coach (bez historii)',
         'POST /api/ai/chat/persistent': 'Wyślij wiadomość do AI Coach (z historią)',

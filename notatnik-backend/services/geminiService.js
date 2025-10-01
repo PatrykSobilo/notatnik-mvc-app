@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import https from 'https';
 
 class GeminiService {
   constructor() {
@@ -9,11 +10,100 @@ class GeminiService {
     }
 
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' 
-    });
-    
-    console.log('✅ Gemini AI zainicjalizowany pomyślnie');
+    this.preferredModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    // Lista kandydatów do automatycznego fallbacku podczas runtime (kolejność ma znaczenie)
+    const extra = (process.env.GEMINI_MODEL_CANDIDATES || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    this.candidateModels = Array.from(new Set([
+      this.preferredModel,
+      ...extra,
+      'gemini-1.5-pro-latest',
+      'gemini-1.5-pro',
+      'gemini-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-001'
+    ]));
+    this.model = null;
+    this.activeModelName = null;
+    this._selecting = false; // prosty lock aby uniknąć równoległej selekcji
+    this._initModel();
+  }
+
+  async _initModel() {
+    try {
+      // Spróbuj użyć preferowanego modelu
+      this.model = this.genAI.getGenerativeModel({ model: this.preferredModel });
+      // Prosty test: niektóre SDK nie udostępniają ping - odczekujemy lazy init przy pierwszym wywołaniu
+      console.log(`✅ Gemini AI zainicjalizowany. Model: ${this.preferredModel}`);
+      this.activeModelName = this.preferredModel;
+    } catch (err) {
+      console.warn(`⚠️ Nie udało się ustawić modelu '${this.preferredModel}':`, err.message);
+      try {
+        // Pobierz listę modeli i wybierz pierwszy obsługujący generateContent
+        if (this.genAI.listModels) {
+          const list = await this.genAI.listModels();
+          const first = list?.models?.find(m => (m.supportedMethods || []).includes('generateContent')) || list?.models?.[0];
+          if (first?.name) {
+            this.model = this.genAI.getGenerativeModel({ model: first.name });
+            console.log(`🔁 Fallback do modelu: ${first.name}`);
+            this.activeModelName = first.name;
+          } else {
+            console.error('❌ Brak dostępnych modeli do fallbacku.');
+            this.model = null;
+          }
+        } else {
+          console.error('❌ API listModels niedostępne w tej wersji SDK.');
+          this.model = null;
+        }
+      } catch (inner) {
+        console.error('❌ Fallback model initialization failed:', inner.message);
+        this.model = null;
+      }
+    }
+  }
+
+  async _runtimeSelectWorkingModel() {
+    if (this._selecting) {
+      // Inny request już próbuje — poczekaj krótko
+      for (let i = 0; i < 20 && this._selecting; i++) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+      return this.model ? true : false;
+    }
+    this._selecting = true;
+    try {
+      console.warn('🔍 Runtime fallback: próba znalezienia działającego modelu...');
+      for (const candidate of this.candidateModels) {
+        try {
+          const testModel = this.genAI.getGenerativeModel({ model: candidate });
+          // Wysyłamy bardzo krótki prompt testowy aby zweryfikować generateContent
+          const test = await testModel.generateContent('ping');
+          await test.response.text();
+          this.model = testModel;
+          this.activeModelName = candidate;
+          console.log(`✅ Runtime fallback udany. Aktywny model: ${candidate}`);
+          return true;
+        } catch (err) {
+          const msg = err?.message || '';
+          if (err?.status === 404 || msg.includes('not found')) {
+            console.warn(`⏭️ Model ${candidate} niedostępny (404). Przechodzę dalej...`);
+            continue;
+          }
+          if (msg.includes('QUOTA') || msg.includes('permission')) {
+            console.warn(`⏭️ Model ${candidate} odrzucony (quota/permission).`);
+            continue;
+          }
+          // Inny błąd — też próbujemy kolejny, ale logujemy bardziej szczegółowo
+          console.warn(`⏭️ Model ${candidate} błąd: ${msg}`);
+        }
+      }
+      console.error('❌ Runtime fallback nie znalazł działającego modelu.');
+      return false;
+    } finally {
+      this._selecting = false;
+    }
   }
 
   /**
@@ -21,6 +111,95 @@ class GeminiService {
    */
   isAvailable() {
     return this.genAI !== null;
+  }
+
+  /**
+   * Surowa lista modeli poprzez REST (pomija SDK) – diagnostyka.
+   * Próbuje zarówno ścieżkę v1beta jak i v1. Zwraca scaloną tablicę unikalnych nazw.
+   */
+  async rawListModels() {
+    if (!process.env.GEMINI_API_KEY) throw new Error('Brak GEMINI_API_KEY');
+    const key = process.env.GEMINI_API_KEY;
+    const endpoints = [
+      'https://generativelanguage.googleapis.com/v1beta/models',
+      'https://generativelanguage.googleapis.com/v1/models'
+    ];
+    const all = [];
+    for (const url of endpoints) {
+      try {
+        const data = await this._simpleGetJson(`${url}?key=${key}`);
+        if (Array.isArray(data.models)) {
+          data.models.forEach(m => {
+            if (m?.name && !all.find(x => x.name === m.name)) {
+              all.push({ name: m.name, displayName: m.displayName, supportedMethods: m.supportedMethods });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn(`RAW listModels błąd dla ${url}:`, e.message);
+      }
+    }
+    return all;
+  }
+
+  /**
+   * Surowy test wygenerowania odpowiedzi dla krótkiego promptu – bez użycia instancji modelu z SDK.
+   */
+  async rawGenerateTest(modelName, prompt = 'ping') {
+    if (!process.env.GEMINI_API_KEY) throw new Error('Brak GEMINI_API_KEY');
+    const key = process.env.GEMINI_API_KEY;
+    const body = {
+      contents: [
+        { role: 'user', parts: [{ text: prompt }] }
+      ]
+    };
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${key}`;
+    return this._simplePostJson(url, body);
+  }
+
+  _simpleGetJson(url) {
+    return new Promise((resolve, reject) => {
+      https.get(url, res => {
+        let raw = '';
+        res.on('data', chunk => raw += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+        });
+      }).on('error', reject);
+    });
+  }
+
+  _simplePostJson(url, payload) {
+    return new Promise((resolve, reject) => {
+      const u = new URL(url);
+      const data = JSON.stringify(payload);
+      const req = https.request({
+        method: 'POST',
+        hostname: u.hostname,
+        path: u.pathname + u.search,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(data)
+        }
+      }, res => {
+        let raw = '';
+        res.on('data', c => raw += c);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(raw || '{}');
+            if (res.statusCode >= 400) {
+              const err = new Error(parsed.error?.message || `HTTP ${res.statusCode}`);
+              err.status = res.statusCode;
+              return reject(err);
+            }
+            resolve(parsed);
+          } catch (e) { reject(e); }
+        });
+      });
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
   }
 
   /**
@@ -48,7 +227,7 @@ Odpowiedz po polsku w maksymalnie 200 słowach.`;
    * Wysyła wiadomość do Gemini AI i otrzymuje odpowiedź
    */
   async getChatResponse(noteTitle, noteContent, userMessage, conversationHistory = []) {
-    if (!this.isAvailable()) {
+    if (!this.isAvailable() || !this.model) {
       throw new Error('Gemini AI nie jest dostępny. Sprawdź konfigurację API key.');
     }
 
@@ -67,8 +246,8 @@ Odpowiedz po polsku w maksymalnie 200 słowach.`;
         fullPrompt += `\nUżytkownik: ${userMessage}`;
       }
 
-      // Wyślij zapytanie do Gemini
-      const result = await this.model.generateContent(fullPrompt);
+    // Wyślij zapytanie do Gemini
+    const result = await this.model.generateContent(fullPrompt);
       const response = await result.response;
       const text = response.text();
 
@@ -77,15 +256,38 @@ Odpowiedz po polsku w maksymalnie 200 słowach.`;
 
     } catch (error) {
       console.error('❌ Błąd komunikacji z Gemini AI:', error);
-      
-      if (error.message.includes('API_KEY_INVALID')) {
+
+      const msg = error?.message || '';
+      // API key invalid
+      if (msg.includes('API_KEY_INVALID')) {
         throw new Error('Nieprawidłowy klucz API Gemini. Sprawdź konfigurację.');
       }
-      
-      if (error.message.includes('QUOTA_EXCEEDED')) {
+      // Quota
+      if (msg.includes('QUOTA_EXCEEDED')) {
         throw new Error('Przekroczono limit zapytań do Gemini API.');
       }
-      
+      // 404 model not found -> spróbuj runtime fallback raz
+      const notFound = (error.status === 404) || (msg.includes('models/') && msg.includes('not found'));
+      if (notFound) {
+        const triedBefore = this._attemptedRuntimeFallback;
+        if (!triedBefore) {
+          this._attemptedRuntimeFallback = true;
+          const ok = await this._runtimeSelectWorkingModel();
+            if (ok) {
+              // retry once
+              try {
+                const retry = await this.model.generateContent(this.generateCoachPrompt(noteTitle, noteContent, userMessage));
+                const rtext = await retry.response.text();
+                console.log('🔁 Udało się po runtime fallback.');
+                return rtext;
+              } catch (retryErr) {
+                console.error('❌ Retry po fallbacku nieudany:', retryErr.message);
+              }
+            }
+        }
+        throw new Error('Model Gemini niedostępny / 404. Spróbuj inny GEMINI_MODEL lub zaktualizuj SDK.');
+      }
+
       throw new Error('Wystąpił błąd podczas komunikacji z AI. Spróbuj ponownie.');
     }
   }
