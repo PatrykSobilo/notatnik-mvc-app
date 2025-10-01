@@ -1,0 +1,17 @@
+services:
+  backend:
+    environment:
+      NODE_ENV: production
+      # Production origin enforced via FRONTEND_URL
+    ports:
+      - "3000:3000"
+  frontend:
+    environment:
+      VITE_API_BASE: ${VITE_API_BASE:-http://localhost:3000}
+    ports:
+      - "3001:80"
+  db:
+    # Do not expose Postgres to the host in prod (commented out mapping)
+    ports: []
+
+# In production you might front this with reverse proxy (nginx/traefik) for HTTPS

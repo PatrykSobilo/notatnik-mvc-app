@@ -99,6 +99,7 @@ Kluczowe zmienne:
 - `JWT_EXPIRES` – domyślnie `7d`
 - `GEMINI_API_KEY` – klucz do API Gemini (tylko backend!)
 - `GEMINI_API_URL` – endpoint modelu (domyślny przykład w pliku)
+- `COMMIT_SHA` – opcjonalne, wyświetlane w `/version` (wstrzykiwane przy deploy)
 
 Nigdy nie commituj realnych sekretów. `.env` jest w `.gitignore`.
 
@@ -149,11 +150,12 @@ npm run build
 ```
 
 ---
-## 🧪 Test zdrowia
+## 🧪 Test zdrowia i wersji
 ```bash
 curl http://localhost:3000/health
+curl http://localhost:3000/version
 ```
-Oczekiwany JSON z `status: OK`.
+`/version` zwraca JSON z `commit`, `buildTime`, `environment`.
 
 ---
 ## 🛠 Typowe problemy

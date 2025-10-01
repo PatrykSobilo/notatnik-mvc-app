@@ -58,6 +58,17 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Version / build metadata endpoint
+const BUILD_TIME = new Date().toISOString();
+app.get('/version', (req, res) => {
+  res.json({
+    commit: process.env.COMMIT_SHA || 'dev',
+    buildTime: BUILD_TIME,
+    node: process.version,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
