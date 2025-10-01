@@ -10,7 +10,9 @@ class GeminiService {
     }
 
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.preferredModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    // Pozwól ustawiać model zarówno w formie 'models/gemini-2.5-pro' jak i 'gemini-2.5-pro'
+    const rawPreferred = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    this.preferredModel = rawPreferred.replace(/^models\//, '');
     // Lista kandydatów do automatycznego fallbacku podczas runtime (kolejność ma znaczenie)
     const extra = (process.env.GEMINI_MODEL_CANDIDATES || '')
       .split(',')
@@ -18,7 +20,16 @@ class GeminiService {
       .filter(Boolean);
     this.candidateModels = Array.from(new Set([
       this.preferredModel,
-      ...extra,
+      ...extra.map(m => m.replace(/^models\//, '')),
+      // Najnowsze serie 2.5 / 2.0 (jeśli dostępne w środowisku konta)
+      'gemini-2.5-pro',
+      'gemini-2.5-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-pro-exp',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      // Stabilne 1.5 / legacy krótkie aliasy
       'gemini-1.5-pro-latest',
       'gemini-1.5-pro',
       'gemini-pro',
