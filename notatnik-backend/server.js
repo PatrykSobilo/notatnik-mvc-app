@@ -21,18 +21,47 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:3002',
   'http://localhost:3003',
-  process.env.FRONTEND_ORIGIN // np. http://157.230.20.16 lub docelowa domena
+  process.env.FRONTEND_ORIGIN // np. https://sobit.uk
 ].filter(Boolean);
+
+console.log('🔐 CORS allowed origins (initial):', allowedOrigins);
+
+// Dodatkowa logika: jeśli w produkcji i origin odpowiada hostowi requestu (https) – dopuść (last resort)
+function isOriginAllowed(origin, reqHost) {
+  if (!origin) return true; // np. curl / serwerowy request
+  if (allowedOrigins.includes(origin)) return true;
+  // Jeżeli produkcja i origin jest "https://" + host (kanoniczny przypadek)
+  if (process.env.NODE_ENV === 'production' && reqHost && origin === `https://${reqHost}`) {
+    console.warn('CORS: dynamically allowing origin that matches host:', origin);
+    allowedOrigins.push(origin); // cache
+    return true;
+  }
+  return false;
+}
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Brak origin (np. curl) – zezwól
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('CORS: Origin not allowed: ' + origin), false);
+    // origin sprawdzony niżej w middleware który ma dostęp do req
+    callback(null, true); // Tymczasowo przepuszczamy – faktyczna walidacja niżej (custom middleware)
   },
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Właściwa walidacja origin (po wstępnym dodaniu nagłówków CORS – aby nie powodować 500 przy wczesnym błędzie)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const host = req.headers.host;
+  if (!origin) return next();
+  if (isOriginAllowed(origin, host)) return next();
+  console.warn('🚫 CORS blocked origin:', origin, 'allowed:', allowedOrigins);
+  return res.status(403).json({
+    success: false,
+    error: 'CORS: Origin not allowed',
+    origin,
+    allowedOrigins
+  });
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(validateJSON);
